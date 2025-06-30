@@ -20,7 +20,7 @@ from googleapiclient.errors import HttpError
 class OutlookToGoogleCalendarSync:
     def __init__(self, csv_path="data/dump_outlook_calendar.csv", 
                  client_secret_file="data/client_secret.json",
-                 calendar_id="primary",
+                 calendar_id="OutlookMacSync",
                  force_update=False,
                  mark_deleted=True):
         self.csv_path = csv_path
@@ -179,6 +179,65 @@ class OutlookToGoogleCalendarSync:
         print("   • 刷新成功後立即保存新憑證")
         print("   • 刷新失敗時會提示重新授權")
         print("   • 透明處理，用戶無感知")
+    
+    def setup_outlook_calendar(self):
+        """設定或創建 OutlookMacSync 日曆"""
+        try:
+            # 如果 calendar_id 是 "OutlookMacSync"，需要找到或創建這個日曆
+            if self.calendar_id == "OutlookMacSync":
+                print("🔍 搜索 OutlookMacSync 日曆...")
+                
+                # 列出所有日曆
+                calendars_result = self.service.calendarList().list().execute()
+                calendars = calendars_result.get('items', [])
+                
+                # 尋找 OutlookMacSync 日曆
+                outlook_calendar = None
+                for calendar in calendars:
+                    if calendar.get('summary') == 'OutlookMacSync':
+                        outlook_calendar = calendar
+                        break
+                
+                if outlook_calendar:
+                    self.calendar_id = outlook_calendar['id']
+                    print(f"✅ 找到現有的 OutlookMacSync 日曆")
+                    print(f"📅 日曆 ID: {self.calendar_id}")
+                else:
+                    # 創建新的日曆
+                    print("📅 創建新的 OutlookMacSync 日曆...")
+                    calendar_body = {
+                        'summary': 'OutlookMacSync',
+                        'description': '從 Mac Outlook 同步的行事曆事件\n\n此日曆包含從 Microsoft Outlook for Mac 自動同步的事件。\n請勿手動修改此日曆中的事件，因為它們會在下次同步時被覆蓋。',
+                        'timeZone': 'Asia/Taipei'
+                    }
+                    
+                    created_calendar = self.service.calendars().insert(body=calendar_body).execute()
+                    self.calendar_id = created_calendar['id']
+                    
+                    print(f"✅ 成功創建 OutlookMacSync 日曆")
+                    print(f"📅 日曆 ID: {self.calendar_id}")
+                    
+                    # 設定日曆顏色（可選）
+                    try:
+                        calendar_list_entry = {
+                            'id': self.calendar_id,
+                            'colorId': '9'  # 藍色
+                        }
+                        self.service.calendarList().patch(
+                            calendarId=self.calendar_id, 
+                            body=calendar_list_entry
+                        ).execute()
+                        print("🎨 設定日曆顏色為藍色")
+                    except Exception as e:
+                        print(f"⚠️ 設定日曆顏色失敗: {e}")
+            
+            else:
+                print(f"📅 使用指定的日曆: {self.calendar_id}")
+                
+        except Exception as e:
+            print(f"❌ 設定日曆時發生錯誤: {e}")
+            print("💡 將使用主要日曆作為備選")
+            self.calendar_id = "primary"
     
     def load_cache(self):
         """載入本地快取"""
@@ -631,6 +690,9 @@ class OutlookToGoogleCalendarSync:
     
     def sync_events(self):
         """同步所有事件"""
+        # 設定 OutlookMacSync 日曆
+        self.setup_outlook_calendar()
+        
         # 檢查 CSV 檔案
         if not os.path.exists(self.csv_path):
             print(f"❌ 找不到 CSV 檔案: {self.csv_path}")
@@ -734,8 +796,11 @@ def main():
     
     # 檢查是否有 CSV 檔案
     csv_files = [
+        "data/dump_outlook_calendar.csv",
         "dump_outlook_calendar.csv",
+        "data/outlook_calendar_complete.csv",
         "outlook_calendar_complete.csv", 
+        "data/outlook_calendar.csv",
         "outlook_calendar.csv"
     ]
     
@@ -755,8 +820,11 @@ def main():
     
     # 檢查 Google API 憑證檔案
     client_secret_files = [
+        "data/client_secret.json",
         "client_secret.json",
+        "data/client_secret_454302710199-eltj3sk10l5af60aloctrvaefi891vbk.apps.googleusercontent.com.json",
         "client_secret_454302710199-eltj3sk10l5af60aloctrvaefi891vbk.apps.googleusercontent.com.json",
+        "data/credentials.json",
         "credentials.json"
     ]
     
