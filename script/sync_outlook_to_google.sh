@@ -13,9 +13,47 @@ echo "🚀 開始 Outlook Calendar 到 Google Calendar 同步..."
 echo "=================================================="
 echo "📅 同步範圍: ${DAYS} 天"
 
-# 檢查是否安裝了 uv
-if ! command -v uv &> /dev/null; then
+#!/bin/bash
+
+# Outlook Calendar to Google Calendar 同步腳本
+# 使用方法: 
+#   ./sync_outlook_to_google.sh           # 使用預設14天
+#   ./sync_outlook_to_google.sh 7         # 同步7天
+#   ./sync_outlook_to_google.sh 30        # 同步30天
+
+# 設定完整的 PATH 環境變數（適用於 cron）
+export PATH="/usr/local/bin:/usr/bin:/bin:/opt/homebrew/bin:$HOME/.cargo/bin:$PATH"
+
+# 設定工作目錄
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+cd "$PROJECT_DIR"
+
+# 設定預設天數
+DAYS=${1:-14}
+
+echo "🚀 開始 Outlook Calendar 到 Google Calendar 同步..."
+echo "=================================================="
+echo "📅 同步範圍: ${DAYS} 天"
+echo "📁 工作目錄: $(pwd)"
+echo "🔧 PATH: $PATH"
+
+# 尋找 uv 命令
+UV_PATH=""
+for path in "$HOME/.cargo/bin/uv" "/opt/homebrew/bin/uv" "/usr/local/bin/uv" "$(which uv 2>/dev/null)"; do
+    if [ -f "$path" ] && [ -x "$path" ]; then
+        UV_PATH="$path"
+        echo "✅ 找到 uv: $UV_PATH"
+        break
+    fi
+done
+
+if [ -z "$UV_PATH" ]; then
     echo "❌ 錯誤: 找不到 uv 命令"
+    echo "🔍 搜索的路徑:"
+    echo "   - $HOME/.cargo/bin/uv"
+    echo "   - /opt/homebrew/bin/uv" 
+    echo "   - /usr/local/bin/uv"
     echo "請先安裝 uv: curl -LsSf https://astral.sh/uv/install.sh | sh"
     exit 1
 fi
