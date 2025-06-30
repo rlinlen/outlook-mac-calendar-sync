@@ -34,6 +34,7 @@
 - Google Calendar API憑證（用於同步功能）
 
 ## 使用方法
+請先git clone，然後在專案目錄下(./outlook-mac-calendar-sync)執行以下操作
 
 ### 1. 安裝Dependency
 ```bash
@@ -53,6 +54,8 @@ uv pip install -r requirements.txt
 3. 建立 OAuth 2.0 憑證
 4. 下載憑證檔案為 `client_secret.json`
 5. 在專案目錄下，創建data資料夾，並將`client_secret.json`放到data中
+
+未來如果token過期，會跳出Google OAuth視窗，接受即可。
 
 #### 執行同步
 
@@ -76,15 +79,52 @@ uv run script/dump_outlook_calendar.py --timezone UTC+9   # 日本時間
 uv run script/sync_csv_with_google_calendar_improved.py
 ```
 
-### 3. 設定排程
+### 3. [Optional] 設定排程
 使用cron自動進行同步
+3-1:
 ```bash
 crontab -e
 ```
 
+3-2:
 ```bash
 */51 * * * * cd <your-folder>/outlook-mac-calendar-sync && ./script/sync_outlook_to_google.sh >> data/cron.log 2>&1
 ```
+
+3-3:
+Grant Full Disk Access to cron：
+1. Open System Preferences
+   • Click the Apple menu → System Preferences
+   • Or use Spotlight: Press Cmd + Space, type "System Preferences"
+
+2. Navigate to Privacy Settings
+   • Click on "Security & Privacy"
+   • Select the "Privacy" tab at the top
+
+3. Access Full Disk Access Settings
+   • In the left sidebar, scroll down and click "Full Disk Access"
+   • You'll see a list of applications that have full disk access
+
+4. Unlock Settings
+   • Click the lock icon (🔒) in the bottom left corner
+   • Enter your administrator password when prompted
+   • The lock should now show as unlocked (🔓)
+
+5. Add uv to the List
+   • If the uv is already in the list, enable it.
+   • Otherwise Click the "+" (plus) button below the application list
+      • In the file browser that opens:
+         • Press Cmd + Shift + G to open "Go to Folder"
+         • Find the uv binary
+         • Select the cron file and click "Open"
+
+
+7. Lock Settings Again
+   • Click the lock icon to prevent further changes
+   • Close System Preferences
+
+
+如未設定，會跳出““uv” would like to access data from other apps.”
 
 ## 檔案說明
 
@@ -177,7 +217,7 @@ uv run sync_csv_with_google_calendar_improved.py --help
 
 ### Calendar_UID 格式類型
 
-- **Amazon Meetings**: `Meetings-1750998579963-timyeh-6b8b69b3a5657505fc82c1edd4d77b92`
+- **Amazon Meetings**: `Meetings-1750998579963-ty-6b8b69b3a5657505fc82c1edd4d77b92`
 - **Exchange格式**: `040000008200E00074C5B7101A82E00800000000005C9B6C81E7DB010000000000000000100000005265EC731D93EA4695D069C844E4F519`
 - **GUID格式**: `A14A9B4A-1742-4971-AADB-09EDB65F0B52`
 - **Google Calendar**: `35denat4othqdc4omp2jbhvmk8@google.com`

@@ -21,6 +21,15 @@ echo "📅 同步範圍: ${DAYS} 天"
 #   ./sync_outlook_to_google.sh 7         # 同步7天
 #   ./sync_outlook_to_google.sh 30        # 同步30天
 
+# 時間戳函數
+timestamp() {
+    date '+[%Y-%m-%d %H:%M:%S]'
+}
+
+# 重定向所有輸出並添加時間戳
+exec > >(while IFS= read -r line; do echo "$(timestamp) $line"; done)
+exec 2> >(while IFS= read -r line; do echo "$(timestamp) [ERROR] $line"; done >&2)
+
 # 設定完整的 PATH 環境變數（適用於 cron）
 export PATH="/usr/local/bin:/usr/bin:/bin:/opt/homebrew/bin:$HOME/.cargo/bin:$PATH"
 
@@ -36,7 +45,6 @@ echo "🚀 開始 Outlook Calendar 到 Google Calendar 同步..."
 echo "=================================================="
 echo "📅 同步範圍: ${DAYS} 天"
 echo "📁 工作目錄: $(pwd)"
-echo "🔧 PATH: $PATH"
 
 # 尋找 uv 命令
 UV_PATH=""
