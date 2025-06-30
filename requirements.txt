@@ -1,0 +1,19 @@
+# Outlook Calendar Reader 專案依賴套件
+
+# 基本資料處理
+pandas>=1.5.0
+numpy>=1.21.0
+
+# Google Calendar API
+google-auth>=2.0.0
+google-auth-oauthlib>=0.5.0
+google-auth-httplib2>=0.1.0
+google-api-python-client>=2.0.0
+
+# HTTP 請求處理
+requests>=2.25.0
+urllib3>=1.26.0
+
+# 其他工具
+python-dateutil>=2.8.0
+pytz>=2021.1

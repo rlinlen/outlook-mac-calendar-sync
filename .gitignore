@@ -1,0 +1,74 @@
+# 敏感資料目錄
+data/
+# 但允許說明檔案
+!data/README.md
+!data/.gitkeep
+
+# Python 相關
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# 虛擬環境
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# 日誌檔案
+*.log
+auto_sync.log
+
+# 暫存檔案
+*.tmp
+*.temp
+tmp/
+temp/
+
+# 備份檔案
+*.bak
+*.backup
+
+# CSV 輸出檔案（如果不在 data 目錄）
+*.csv
+
+# 憑證檔案（防止意外提交）
+client_secret*.json
+token.json
+credentials.json
+
+# 快取檔案
+sync_cache.json
