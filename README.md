@@ -47,7 +47,7 @@ uv pip install -r requirements.txt
 
 #### 設定 Google Calendar API
 
-請參考 `setup_google_calendar_api.md` 完成以下步驟：
+請參考 `SETUP_GOOGLE_CALENDAR_API.md` 完成以下步驟：
 1. 建立 Google Cloud 專案
 2. 啟用 Google Calendar API
 3. 建立 OAuth 2.0 憑證
@@ -57,6 +57,7 @@ uv pip install -r requirements.txt
 #### 執行同步
 
 **方法一：使用一鍵腳本（推薦）**
+在專案目錄下，執行以下腳本：
 ```bash
 ./script/sync_outlook_to_google.sh
 ```
@@ -75,7 +76,15 @@ uv run script/dump_outlook_calendar.py --timezone UTC+9   # 日本時間
 uv run script/sync_csv_with_google_calendar_improved.py
 ```
 
+### 3. 設定排程
+使用cron自動進行同步
+```bash
+crontab -e
+```
 
+```bash
+*/51 * * * * cd <your-folder>/outlook-mac-calendar-sync && ./script/sync_outlook_to_google.sh >> data/cron.log 2>&1
+```
 
 ## 檔案說明
 
@@ -101,7 +110,7 @@ uv run script/sync_csv_with_google_calendar_improved.py
 
 ### 配置檔案
 
-- **`setup_google_calendar_api.md`** - Google API設定指南
+- **`SETUP_GOOGLE_CALENDAR_API.md`** - Google API設定指南
 - **`sync_outlook_to_google.sh`** - 一鍵同步腳本
 
 ## 功能特色
@@ -346,7 +355,7 @@ Outlook使用特殊的時間格式：從1601-01-01 UTC開始計算的分鐘數�
    - 自動執行 Outlook 讀取和 Google 同步
    - 完整的錯誤檢查和狀態顯示
 
-6. **`setup_google_calendar_api.md`** - Google API 設定指南
+6. **`SETUP_GOOGLE_CALENDAR_API.md`** - Google API 設定指南
    - 詳細的 Google Cloud Console 設定步驟
    - OAuth 2.0 憑證配置說明
 
@@ -367,7 +376,7 @@ Outlook使用特殊的時間格式：從1601-01-01 UTC開始計算的分鐘數�
 
 #### 1. 設定 Google Calendar API
 
-請參考 `setup_google_calendar_api.md` 完成以下步驟：
+請參考 `SETUP_GOOGLE_CALENDAR_API.md` 完成以下步驟：
 1. 建立 Google Cloud 專案
 2. 啟用 Google Calendar API
 3. 建立 OAuth 2.0 憑證
@@ -465,7 +474,7 @@ uv run sync_csv_with_google_calendar_improved.py --no-mark-deleted
 
 #### 1. 設定 Google Calendar API
 
-請參考 `setup_google_calendar_api.md` 完成以下步驟：
+請參考 `SETUP_GOOGLE_CALENDAR_API.md` 完成以下步驟：
 1. 建立 Google Cloud 專案
 2. 啟用 Google Calendar API
 3. 建立 OAuth 2.0 憑證

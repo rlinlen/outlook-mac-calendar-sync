@@ -17,7 +17,7 @@ import argparse
 
 class CompleteFixedTimeZoneOutlookParser:
     def __init__(self, user_timezone='UTC+8'):
-        self.outlook_data_path = "~/Library/Group Containers/UBF8T346G9.Office/Outlook/Outlook 15 Profiles/Main Profile/Data"
+        self.outlook_data_path = os.path.expanduser("~/Library/Group Containers/UBF8T346G9.Office/Outlook/Outlook 15 Profiles/Main Profile/Data")
         self.db_path = os.path.join(self.outlook_data_path, "Outlook.sqlite")
         self.user_timezone = self.parse_timezone(user_timezone)
         
