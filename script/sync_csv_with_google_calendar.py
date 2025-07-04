@@ -22,7 +22,9 @@ class OutlookToGoogleCalendarSync:
                  client_secret_file="data/client_secret.json",
                  calendar_id="OutlookMacSync",
                  force_update=False,
-                 mark_deleted=True):
+                 mark_deleted=True,
+                 cleanup_days=2,
+                 enable_cleanup=True):
         self.csv_path = csv_path
         self.cache_path = "data/sync_cache.json"
         self.token_path = "data/token.json"
@@ -33,6 +35,8 @@ class OutlookToGoogleCalendarSync:
         self.cache = {}
         self.force_update = force_update
         self.mark_deleted = mark_deleted
+        self.cleanup_days = cleanup_days
+        self.enable_cleanup = enable_cleanup
         
     def authenticate(self):
         """Google Calendar API 認證"""
@@ -179,6 +183,83 @@ class OutlookToGoogleCalendarSync:
         print("   • 刷新成功後立即保存新憑證")
         print("   • 刷新失敗時會提示重新授權")
         print("   • 透明處理，用戶無感知")
+    
+    def cleanup_expired_events(self, days_threshold=2):
+        """清理過期的事件
+        
+        Args:
+            days_threshold (int): 過期天數閾值，預設2天
+        """
+        try:
+            from datetime import datetime, timezone, timedelta
+            
+            # 計算過期時間點（前天 23:59:59）
+            cutoff_date = datetime.now(timezone.utc) - timedelta(days=days_threshold)
+            cutoff_str = cutoff_date.strftime('%Y-%m-%dT%H:%M:%SZ')
+            
+            print(f"🗑️ 開始清理 {days_threshold} 天前的過期事件...")
+            print(f"📅 清理截止時間: {cutoff_date.strftime('%Y-%m-%d %H:%M:%S UTC')}")
+            
+            # 搜索過期事件
+            events_result = self.service.events().list(
+                calendarId=self.calendar_id,
+                timeMax=cutoff_str,  # 結束時間在截止時間之前的事件
+                maxResults=2500,
+                singleEvents=True,
+                orderBy='startTime'
+            ).execute()
+            
+            expired_events = events_result.get('items', [])
+            
+            if not expired_events:
+                print("✅ 沒有找到需要清理的過期事件")
+                return
+            
+            print(f"🔍 找到 {len(expired_events)} 個過期事件")
+            
+            # 刪除過期事件
+            deleted_count = 0
+            failed_count = 0
+            
+            for event in expired_events:
+                try:
+                    event_id = event['id']
+                    event_title = event.get('summary', '無標題')
+                    event_start = event.get('start', {}).get('dateTime', event.get('start', {}).get('date', '未知時間'))
+                    
+                    # 檢查是否是 Outlook 同步的事件（通過描述中的標記識別）
+                    description = event.get('description', '')
+                    
+                    # 檢查多種可能的標記格式
+                    is_outlook_event = (
+                        'Outlook UID:' in description or 
+                        '[OutlookMacSync]' in description or
+                        'Outlook Calendar UID:' in description or
+                        '[Outlook Calendar UID:' in description
+                    )
+                    
+                    if is_outlook_event:
+                        self.service.events().delete(
+                            calendarId=self.calendar_id,
+                            eventId=event_id
+                        ).execute()
+                        
+                        deleted_count += 1
+                        print(f"🗑️ 已刪除: {event_title} ({event_start})")
+                    else:
+                        print(f"⏭️ 跳過非同步事件: {event_title}")
+                        
+                except Exception as e:
+                    failed_count += 1
+                    print(f"❌ 刪除失敗: {event_title} - {e}")
+            
+            print(f"\n🎉 過期事件清理完成!")
+            print(f"✅ 成功刪除: {deleted_count} 個事件")
+            if failed_count > 0:
+                print(f"❌ 刪除失敗: {failed_count} 個事件")
+                
+        except Exception as e:
+            print(f"❌ 清理過期事件時發生錯誤: {e}")
     
     def setup_outlook_calendar(self):
         """設定或創建 OutlookMacSync 日曆"""
@@ -483,6 +564,9 @@ class OutlookToGoogleCalendarSync:
         # 添加描述信息
         description_parts = []
         
+        # 添加同步標記（用於清理識別）
+        description_parts.append("[OutlookMacSync] 此事件由 Mac Outlook 自動同步")
+        
         # 添加組織者信息
         if pd.notna(row['Organizer']) and str(row['Organizer']).strip():
             description_parts.append(f"組織者: {row['Organizer']}")
@@ -750,6 +834,13 @@ class OutlookToGoogleCalendarSync:
             print(f"✅ 成功: {success_count} 個事件")
             print(f"❌ 失敗: {error_count} 個事件")
             
+            # 清理過期事件
+            if self.enable_cleanup and self.cleanup_days > 0:
+                print(f"\n" + "="*50)
+                self.cleanup_expired_events(days_threshold=self.cleanup_days)
+            else:
+                print(f"\nℹ️ 過期事件清理已停用")
+            
             return True
             
         except Exception as e:
@@ -769,6 +860,10 @@ def main():
                        help='不標記已刪除的事件')
     parser.add_argument('--days', '-d', type=int, default=14,
                        help='同步天數，應與Outlook匯出天數一致 (預設: 14天)')
+    parser.add_argument('--cleanup-days', type=int, default=2,
+                       help='自動清理多少天前的過期事件 (預設: 2天，設為0則停用)')
+    parser.add_argument('--no-cleanup', action='store_true',
+                       help='停用自動清理過期事件')
     args = parser.parse_args()
     
     print("Outlook Calendar to Google Calendar 同步器")
@@ -785,6 +880,13 @@ def main():
         print("🗑️ 刪除檢測：已啟用（將標記已刪除的事件）")
     else:
         print("ℹ️ 刪除檢測：已停用")
+    
+    # 處理清理選項
+    enable_cleanup = not args.no_cleanup and args.cleanup_days > 0
+    if enable_cleanup:
+        print(f"🧹 自動清理：已啟用（清理 {args.cleanup_days} 天前的過期事件）")
+    else:
+        print("ℹ️ 自動清理：已停用")
     
     if args.clear_cache:
         cache_file = "sync_cache.json"
@@ -846,7 +948,9 @@ def main():
         csv_path=csv_path,
         client_secret_file=client_secret_file,
         force_update=args.force,
-        mark_deleted=mark_deleted
+        mark_deleted=mark_deleted,
+        cleanup_days=args.cleanup_days,
+        enable_cleanup=enable_cleanup
     )
     
     try:
