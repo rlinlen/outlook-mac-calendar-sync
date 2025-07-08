@@ -734,11 +734,9 @@ class CompleteFixedTimeZoneOutlookParser:
                 event_data['record_mod_date'] = record_mod_date
                 event_data['path_to_data_file'] = path_to_data_file
                 
-                # 如果檔案中沒有找到時間，使用資料庫中的UTC時間
-                if not event_data['start_time_utc']:
-                    event_data['start_time_utc'] = self.minutes_since_1601_to_datetime(start_minutes)
-                if not event_data['end_time_utc']:
-                    event_data['end_time_utc'] = self.minutes_since_1601_to_datetime(end_minutes)
+                # 始終使用資料庫中的UTC時間（最可靠）
+                event_data['start_time_utc'] = self.minutes_since_1601_to_datetime(start_minutes)
+                event_data['end_time_utc'] = self.minutes_since_1601_to_datetime(end_minutes)
                 
                 # 計算持續時間
                 if event_data['start_time_utc'] and event_data['end_time_utc'] and not event_data['duration']:
